@@ -26,6 +26,13 @@ export interface Campaign {
     status: string;
     screenshot?: string;
     id: string;
+    tracklinks: string;
+    trackreads: string;
+    public: string;
+    schedule: string;
+    segmentid: string;
+    formid: string;
+    source: string;
     [key: string]: any;
   };
 }
@@ -38,6 +45,28 @@ export interface CampaignItem {
   ldate: string | null;
   screenshot?: string;
   id: string;
+  status: string;
+  send_amt: string;
+  total_amt: string;
+  opens: string;
+  uniqueopens: string;
+  linkclicks: string;
+  uniquelinkclicks: string;
+  hardbounces: string;
+  softbounces: string;
+  unsubscribes: string;
+  forwards: string;
+  uniqueforwards: string;
+  replies: string;
+  uniquereplies: string;
+  socialshares: string;
+  trackreads: string;
+  tracklinks: string;
+  public: string;
+  schedule: string;
+  segmentid: string;
+  formid: string;
+  source: string;
   [key: string]: any;
 }
 
