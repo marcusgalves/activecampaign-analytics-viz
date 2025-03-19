@@ -1,16 +1,22 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { RefreshCw } from 'lucide-react';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from '@/components/ui/select';
+import { RefreshCw, Search, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CampaignItem } from '@/types/campaign';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 interface CampaignSelectorProps {
   campaigns: CampaignItem[];
@@ -27,6 +33,13 @@ const CampaignSelector: React.FC<CampaignSelectorProps> = ({
   onRefreshCampaigns,
   isLoading
 }) => {
+  const [open, setOpen] = useState(false);
+  
+  // Find selected campaign name to display in the trigger
+  const selectedCampaign = campaigns.find(
+    (campaign) => campaign.id === selectedCampaignId
+  );
+
   return (
     <motion.div
       initial={{ opacity: 0, y: -10 }}
@@ -34,22 +47,44 @@ const CampaignSelector: React.FC<CampaignSelectorProps> = ({
       transition={{ duration: 0.4 }}
       className="flex items-center gap-2"
     >
-      <Select
-        value={selectedCampaignId || ""}
-        onValueChange={onSelectCampaign}
-        disabled={campaigns.length === 0 || isLoading}
-      >
-        <SelectTrigger className="w-[250px]">
-          <SelectValue placeholder="Selecione uma campanha" />
-        </SelectTrigger>
-        <SelectContent>
-          {campaigns.map((campaign) => (
-            <SelectItem key={campaign.id} value={campaign.id}>
-              {campaign.name}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            className="w-[250px] justify-between"
+            disabled={campaigns.length === 0 || isLoading}
+          >
+            {selectedCampaign ? selectedCampaign.name : "Selecione uma campanha"}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-[250px] p-0">
+          <Command>
+            <CommandInput placeholder="Buscar campanha..." className="h-9" />
+            <CommandEmpty>Nenhuma campanha encontrada.</CommandEmpty>
+            <CommandGroup>
+              <CommandList>
+                {campaigns.map((campaign) => (
+                  <CommandItem
+                    key={campaign.id}
+                    value={campaign.name}
+                    onSelect={() => {
+                      onSelectCampaign(campaign.id);
+                      setOpen(false);
+                    }}
+                  >
+                    <Check
+                      className={`mr-2 h-4 w-4 ${selectedCampaignId === campaign.id ? "opacity-100" : "opacity-0"}`}
+                    />
+                    {campaign.name}
+                  </CommandItem>
+                ))}
+              </CommandList>
+            </CommandGroup>
+          </Command>
+        </PopoverContent>
+      </Popover>
       
       <Button
         variant="outline"
