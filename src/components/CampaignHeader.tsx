@@ -2,8 +2,9 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { format } from 'date-fns';
-import { Mail, Calendar, Clock } from 'lucide-react';
+import { Mail, Calendar, Clock, ExternalLink } from 'lucide-react';
 import { Campaign } from '@/types/campaign';
+import { Button } from '@/components/ui/button';
 
 interface CampaignHeaderProps {
   campaign: Campaign['campaign'];
@@ -29,9 +30,20 @@ const CampaignHeader: React.FC<CampaignHeaderProps> = ({ campaign }) => {
     >
       <div className="flex flex-col space-y-2 md:items-center md:flex-row md:justify-between">
         <div>
-          <div className="inline-flex items-center px-3 py-1 mb-2 text-xs font-medium rounded-full bg-primary/10 text-primary">
-            <Mail className="w-3 h-3 mr-1" />
-            Campaign ID: {campaign.id}
+          <div className="flex items-center gap-2 mb-2">
+            <div className="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-primary/10 text-primary">
+              <Mail className="w-3 h-3 mr-1" />
+              Campaign ID: {campaign.id}
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm"
+              className="h-7 text-xs gap-1"
+              onClick={() => window.open(`https://hulisses.activehosted.com/report/#/campaign/${campaign.id}/overview`, '_blank')}
+            >
+              Ver relatório
+              <ExternalLink className="w-3 h-3" />
+            </Button>
           </div>
           <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
             {campaign.name}
