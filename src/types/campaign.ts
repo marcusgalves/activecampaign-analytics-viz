@@ -30,6 +30,17 @@ export interface Campaign {
   };
 }
 
+export interface CampaignItem {
+  type: string;
+  name: string;
+  cdate: string;
+  sdate: string | null;
+  ldate: string | null;
+  screenshot?: string;
+  id: string;
+  [key: string]: any;
+}
+
 export interface CampaignStat {
   label: string;
   value: number | string;
