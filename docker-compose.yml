@@ -1,15 +1,12 @@
 version: '3.8'
 services:
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
+  active-campaign-dashboard:
+    image: marcusgalves/active-campaign-dashboard  # Use uma imagem Docker existente
     ports:
       - "3838:3838"
-    restart: unless-stopped
     environment:
       - NODE_ENV=production
-      - DOMAIN=${DOMAIN:-dash.marcusgalves.com}  # Valor padrão caso a variável não seja definida
+      - DOMAIN=${DOMAIN:-dash.marcusgalves.com}
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3838"]
       interval: 30s
