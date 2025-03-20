@@ -6,7 +6,8 @@ import {
   DialogHeader, 
   DialogTitle, 
   DialogTrigger,
-  DialogFooter
+  DialogFooter,
+  DialogDescription
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -74,7 +75,8 @@ export function FilterDialog({ filters, setFilters }: FilterDialogProps) {
   const [open, setOpen] = useState(false);
   const [editingFilters, setEditingFilters] = useState<FilterValue[]>(filters);
   const [currentField, setCurrentField] = useState('');
-  const [currentOperator, setCurrentOperator] = useState<string>('equals');
+  // Fix the type here to restrict to the allowed operator types
+  const [currentOperator, setCurrentOperator] = useState<FilterValue['operator']>('equals');
   const [currentValue, setCurrentValue] = useState<string>('');
   const [currentValueEnd, setCurrentValueEnd] = useState<string>('');
   
@@ -179,6 +181,9 @@ export function FilterDialog({ filters, setFilters }: FilterDialogProps) {
       <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-auto">
         <DialogHeader>
           <DialogTitle>Filtrar campanhas</DialogTitle>
+          <DialogDescription>
+            Selecione os campos e valores para filtrar suas campanhas.
+          </DialogDescription>
         </DialogHeader>
         
         <div className="space-y-4 my-4">
@@ -230,7 +235,7 @@ export function FilterDialog({ filters, setFilters }: FilterDialogProps) {
                             className="justify-start h-auto py-1 px-2"
                             onClick={() => {
                               setCurrentField(field.key);
-                              // Reset operator based on field type
+                              // Reset operator based on field type with the proper type
                               setCurrentOperator(field.type === 'text' ? 'contains' : 'equals');
                             }}
                           >
@@ -250,7 +255,7 @@ export function FilterDialog({ filters, setFilters }: FilterDialogProps) {
                   <Label htmlFor="operator">Operador</Label>
                   <Select
                     value={currentOperator}
-                    onValueChange={setCurrentOperator}
+                    onValueChange={(value) => setCurrentOperator(value as FilterValue['operator'])}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione um operador" />
