@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { 
   Dialog, 
@@ -23,7 +24,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { FilterPlus, X } from 'lucide-react';
+import { Filter, X } from 'lucide-react';
 import { FILTER_FIELDS, FilterValue, FilterCategory } from '@/types/filters';
 import { Badge } from '@/components/ui/badge';
 
@@ -111,7 +112,7 @@ export function FilterDialog({ filters, setFilters }: FilterDialogProps) {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" className="gap-2">
-          <FilterPlus className="h-4 w-4" />
+          <Filter className="h-4 w-4" />
           Filtrar
           {filters.length > 0 && (
             <Badge variant="secondary" className="ml-1">
@@ -144,8 +145,8 @@ export function FilterDialog({ filters, setFilters }: FilterDialogProps) {
                         {filter.operator === 'between' && ' entre '}
                         {filter.operator === 'startsWith' && ' começa com '}
                         {filter.operator === 'endsWith' && ' termina com '}
-                        <strong>{filter.value}</strong>
-                        {filter.valueEnd && ` e ${filter.valueEnd}`}
+                        <strong>{String(filter.value)}</strong>
+                        {filter.valueEnd && ` e ${String(filter.valueEnd)}`}
                       </span>
                       <button onClick={() => handleRemoveFilter(index)} className="ml-1">
                         <X className="h-3 w-3" />
