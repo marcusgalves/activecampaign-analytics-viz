@@ -1,4 +1,3 @@
-
 # Imagem base multi-arquitetura
 FROM node:20-alpine as builder
 
@@ -17,17 +16,20 @@ COPY . .
 # Constrói a aplicação
 RUN npm run build
 
-# Estágio de produção
-FROM nginx:alpine
+# Estágio de produção usando uma imagem leve com servidor web simples
+FROM node:20-alpine
 
-# Copia os arquivos de build para o diretório de servir do nginx
-COPY --from=builder /app/dist /usr/share/nginx/html
+# Instala um servidor web simples
+RUN npm install -g serve
 
-# Copia configuração personalizada do nginx se necessário
-# COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Cria diretório para a aplicação
+WORKDIR /app
 
-# Expõe a porta 80
-EXPOSE 80
+# Copia os arquivos de build
+COPY --from=builder /app/dist /app
 
-# Comando para iniciar o nginx
-CMD ["nginx", "-g", "daemon off;"]
+# Expõe a porta 3000 (que o serve usa por padrão)
+EXPOSE 3000
+
+# Comando para iniciar o servidor
+CMD ["serve", "-s", ".", "-l", "3000"]
