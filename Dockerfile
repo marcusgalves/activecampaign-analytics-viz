@@ -1,3 +1,4 @@
+
 # Imagem base multi-arquitetura
 FROM node:20-alpine as builder
 
@@ -28,8 +29,8 @@ WORKDIR /app
 # Copia os arquivos de build
 COPY --from=builder /app/dist /app
 
-# Expõe a porta 3000 (que o serve usa por padrão)
-EXPOSE 3000
+# Expõe a porta 3838
+EXPOSE 3838
 
 # Comando para iniciar o servidor
-CMD ["serve", "-s", ".", "-l", "3000"]
+CMD ["serve", "-s", ".", "-l", "3838"]
