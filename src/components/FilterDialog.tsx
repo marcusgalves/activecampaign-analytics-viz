@@ -33,15 +33,33 @@ interface FilterDialogProps {
   setFilters: (filters: FilterValue[]) => void;
 }
 
-const OPERATORS = [
-  { value: 'contains', label: 'Contém' },
+// Base operators for all field types
+const BASE_OPERATORS = [
   { value: 'equals', label: 'Igual a' },
-  { value: 'greater', label: 'Maior que' },
-  { value: 'less', label: 'Menor que' },
-  { value: 'between', label: 'Entre' },
-  { value: 'startsWith', label: 'Começa com' },
-  { value: 'endsWith', label: 'Termina com' },
 ];
+
+// Get operators based on field type
+const getOperatorsByFieldType = (fieldType: string) => {
+  const operators = [...BASE_OPERATORS];
+  
+  if (fieldType === 'text') {
+    operators.push(
+      { value: 'contains', label: 'Contém' },
+      { value: 'startsWith', label: 'Começa com' },
+      { value: 'endsWith', label: 'Termina com' }
+    );
+  }
+  
+  if (fieldType === 'number' || fieldType === 'date') {
+    operators.push(
+      { value: 'greater', label: fieldType === 'date' ? 'Após' : 'Maior que' },
+      { value: 'less', label: fieldType === 'date' ? 'Antes' : 'Menor que' },
+      { value: 'between', label: 'Entre' }
+    );
+  }
+  
+  return operators;
+};
 
 const CATEGORIES: Record<FilterCategory, string> = {
   identification: 'Identificação',
@@ -56,21 +74,43 @@ export function FilterDialog({ filters, setFilters }: FilterDialogProps) {
   const [open, setOpen] = useState(false);
   const [editingFilters, setEditingFilters] = useState<FilterValue[]>(filters);
   const [currentField, setCurrentField] = useState('');
-  const [currentOperator, setCurrentOperator] = useState<any>('contains');
+  const [currentOperator, setCurrentOperator] = useState<string>('equals');
   const [currentValue, setCurrentValue] = useState<string>('');
   const [currentValueEnd, setCurrentValueEnd] = useState<string>('');
   
+  // Get the type of the currently selected field
+  const getCurrentFieldType = (): string => {
+    const field = FILTER_FIELDS.find(f => f.key === currentField);
+    return field?.type || 'text';
+  };
+  
+  // Get operators for the current field
+  const getOperatorsForCurrentField = () => {
+    return getOperatorsByFieldType(getCurrentFieldType());
+  };
+  
   const handleAddFilter = () => {
-    if (!currentField) return;
+    if (!currentField || !currentValue) return;
     
     const field = FILTER_FIELDS.find(f => f.key === currentField);
     if (!field) return;
     
+    let processedValue = currentValue;
+    let processedValueEnd = currentValueEnd;
+    
+    // Process the value based on field type
+    if (field.type === 'number') {
+      processedValue = isNaN(Number(currentValue)) ? '0' : currentValue;
+      if (currentOperator === 'between' && currentValueEnd) {
+        processedValueEnd = isNaN(Number(currentValueEnd)) ? '0' : currentValueEnd;
+      }
+    }
+    
     const newFilter: FilterValue = {
       field: currentField,
       operator: currentOperator,
-      value: currentValue,
-      ...(currentOperator === 'between' && { valueEnd: currentValueEnd })
+      value: processedValue,
+      ...(currentOperator === 'between' && { valueEnd: processedValueEnd })
     };
     
     setEditingFilters([...editingFilters, newFilter]);
@@ -85,7 +125,7 @@ export function FilterDialog({ filters, setFilters }: FilterDialogProps) {
   
   const resetForm = () => {
     setCurrentField('');
-    setCurrentOperator('contains');
+    setCurrentOperator('equals');
     setCurrentValue('');
     setCurrentValueEnd('');
   };
@@ -107,6 +147,21 @@ export function FilterDialog({ filters, setFilters }: FilterDialogProps) {
     acc[field.category].push(field);
     return acc;
   }, {} as Record<FilterCategory, typeof FILTER_FIELDS>);
+  
+  // Function to get a human-readable description of an operator for display
+  const getOperatorDescription = (operator: string, fieldType: string): string => {
+    const operatorItem = getOperatorsByFieldType(fieldType).find(op => op.value === operator);
+    return operatorItem?.label || operator;
+  };
+  
+  // Get input type based on field type
+  const getInputType = (fieldType: string): string => {
+    switch (fieldType) {
+      case 'number': return 'number';
+      case 'date': return 'date';
+      default: return 'text';
+    }
+  };
   
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -134,17 +189,15 @@ export function FilterDialog({ filters, setFilters }: FilterDialogProps) {
               <div className="flex flex-wrap gap-2">
                 {editingFilters.map((filter, index) => {
                   const field = FILTER_FIELDS.find(f => f.key === filter.field);
+                  if (!field) return null;
+                  
                   return (
                     <Badge key={index} variant="secondary" className="flex items-center gap-1">
                       <span>
-                        {field?.label || filter.field} 
-                        {filter.operator === 'contains' && ' contém '}
-                        {filter.operator === 'equals' && ' igual a '}
-                        {filter.operator === 'greater' && ' > '}
-                        {filter.operator === 'less' && ' < '}
-                        {filter.operator === 'between' && ' entre '}
-                        {filter.operator === 'startsWith' && ' começa com '}
-                        {filter.operator === 'endsWith' && ' termina com '}
+                        {field.label} 
+                        {' '}
+                        {getOperatorDescription(filter.operator, field.type)}
+                        {' '}
                         <strong>{String(filter.value)}</strong>
                         {filter.valueEnd && ` e ${String(filter.valueEnd)}`}
                       </span>
@@ -175,7 +228,11 @@ export function FilterDialog({ filters, setFilters }: FilterDialogProps) {
                             key={field.key}
                             variant={currentField === field.key ? "default" : "outline"}
                             className="justify-start h-auto py-1 px-2"
-                            onClick={() => setCurrentField(field.key)}
+                            onClick={() => {
+                              setCurrentField(field.key);
+                              // Reset operator based on field type
+                              setCurrentOperator(field.type === 'text' ? 'contains' : 'equals');
+                            }}
                           >
                             {field.label}
                           </Button>
@@ -199,7 +256,7 @@ export function FilterDialog({ filters, setFilters }: FilterDialogProps) {
                       <SelectValue placeholder="Selecione um operador" />
                     </SelectTrigger>
                     <SelectContent>
-                      {OPERATORS.map(op => (
+                      {getOperatorsForCurrentField().map(op => (
                         <SelectItem key={op.value} value={op.value}>{op.label}</SelectItem>
                       ))}
                     </SelectContent>
@@ -210,7 +267,7 @@ export function FilterDialog({ filters, setFilters }: FilterDialogProps) {
                   <Label htmlFor="value">Valor</Label>
                   <Input
                     id="value"
-                    type="text"
+                    type={getInputType(getCurrentFieldType())}
                     value={currentValue}
                     onChange={(e) => setCurrentValue(e.target.value)}
                     placeholder="Digite o valor"
@@ -222,7 +279,7 @@ export function FilterDialog({ filters, setFilters }: FilterDialogProps) {
                     <Label htmlFor="valueEnd">Valor final</Label>
                     <Input
                       id="valueEnd"
-                      type="text"
+                      type={getInputType(getCurrentFieldType())}
                       value={currentValueEnd}
                       onChange={(e) => setCurrentValueEnd(e.target.value)}
                       placeholder="Digite o valor final"
@@ -230,7 +287,11 @@ export function FilterDialog({ filters, setFilters }: FilterDialogProps) {
                   </div>
                 )}
                 
-                <Button onClick={handleAddFilter} className="w-full">
+                <Button 
+                  onClick={handleAddFilter} 
+                  className="w-full"
+                  disabled={!currentValue || (currentOperator === 'between' && !currentValueEnd)}
+                >
                   Adicionar filtro
                 </Button>
               </>

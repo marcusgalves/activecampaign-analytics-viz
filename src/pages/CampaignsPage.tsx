@@ -71,11 +71,11 @@ const CampaignsPage: React.FC = () => {
     // Aplicar filtragem por modo de visualização
     if (viewMode === 'sent') {
       result = result.filter(campaign => 
-        campaign.sdate !== null && campaign.sdate
+        campaign.sdate !== null && campaign.sdate !== undefined && campaign.sdate !== ''
       );
     } else if (viewMode === 'draft') {
       result = result.filter(campaign => 
-        !campaign.sdate
+        !campaign.sdate || campaign.sdate === '' || campaign.sdate === null
       );
     }
     
@@ -83,8 +83,8 @@ const CampaignsPage: React.FC = () => {
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       result = result.filter(campaign => 
-        campaign.name.toLowerCase().includes(query) ||
-        campaign.id.toString().includes(query)
+        (campaign.name && campaign.name.toLowerCase().includes(query)) ||
+        (campaign.id && campaign.id.toString().includes(query))
       );
     }
     
@@ -94,19 +94,40 @@ const CampaignsPage: React.FC = () => {
         return filters.every(filter => {
           const value = campaign[filter.field as keyof CampaignItem];
           
-          if (value === undefined || value === null) return false;
+          // Skip if value is undefined or null (unless we're looking for emptiness)
+          if (value === undefined || value === null) {
+            // If operator is equals and filter value is empty, consider it a match
+            return filter.operator === 'equals' && 
+                  (filter.value === null || filter.value === '' || filter.value === '0');
+          }
           
+          // Convert to string for easier comparison
           const stringValue = String(value).toLowerCase();
           const filterValue = String(filter.value).toLowerCase();
           
+          // Handle different filter operators
           switch (filter.operator) {
             case 'contains':
               return stringValue.includes(filterValue);
             case 'equals':
               return stringValue === filterValue;
             case 'greater':
+              // For dates
+              if (filter.field.includes('date') || filter.field.includes('timestamp')) {
+                const dateValue = new Date(value as string).getTime();
+                const filterDate = new Date(filter.value as string).getTime();
+                return dateValue > filterDate;
+              }
+              // For numbers
               return Number(value) > Number(filter.value);
             case 'less':
+              // For dates
+              if (filter.field.includes('date') || filter.field.includes('timestamp')) {
+                const dateValue = new Date(value as string).getTime();
+                const filterDate = new Date(filter.value as string).getTime();
+                return dateValue < filterDate;
+              }
+              // For numbers
               return Number(value) < Number(filter.value);
             case 'startsWith':
               return stringValue.startsWith(filterValue);
@@ -114,6 +135,14 @@ const CampaignsPage: React.FC = () => {
               return stringValue.endsWith(filterValue);
             case 'between':
               if (filter.valueEnd) {
+                // For dates
+                if (filter.field.includes('date') || filter.field.includes('timestamp')) {
+                  const dateValue = new Date(value as string).getTime();
+                  const startDate = new Date(filter.value as string).getTime();
+                  const endDate = new Date(filter.valueEnd as string).getTime();
+                  return dateValue >= startDate && dateValue <= endDate;
+                }
+                // For numbers
                 const num = Number(value);
                 return num >= Number(filter.value) && num <= Number(filter.valueEnd);
               }
@@ -131,30 +160,54 @@ const CampaignsPage: React.FC = () => {
         let fieldA = a[sort.field as keyof CampaignItem];
         let fieldB = b[sort.field as keyof CampaignItem];
         
+        // Handle undefined/null values - always put them at the bottom
+        if (fieldA === undefined || fieldA === null) {
+          return sort.direction === 'asc' ? 1 : -1;
+        }
+        if (fieldB === undefined || fieldB === null) {
+          return sort.direction === 'asc' ? -1 : 1;
+        }
+        
         // Lidar com campos calculados
         if (sort.field === 'open_rate') {
-          fieldA = parseInt(a.opens || '0') > 0 ? parseInt(a.uniqueopens || '0') / parseInt(a.send_amt || '1') : 0;
-          fieldB = parseInt(b.opens || '0') > 0 ? parseInt(b.uniqueopens || '0') / parseInt(b.send_amt || '1') : 0;
+          const opensA = parseInt(a.opens || '0');
+          const opensB = parseInt(b.opens || '0');
+          const sendAmtA = parseInt(a.send_amt || '1');
+          const sendAmtB = parseInt(b.send_amt || '1');
+          
+          fieldA = sendAmtA > 0 ? parseInt(a.uniqueopens || '0') / sendAmtA : 0;
+          fieldB = sendAmtB > 0 ? parseInt(b.uniqueopens || '0') / sendAmtB : 0;
         } else if (sort.field === 'click_rate') {
-          fieldA = parseInt(a.opens || '0') > 0 ? parseInt(a.linkclicks || '0') / parseInt(a.opens || '1') : 0;
-          fieldB = parseInt(b.opens || '0') > 0 ? parseInt(b.linkclicks || '0') / parseInt(b.opens || '1') : 0;
+          const opensA = parseInt(a.opens || '0');
+          const opensB = parseInt(b.opens || '0');
+          
+          fieldA = opensA > 0 ? parseInt(a.linkclicks || '0') / opensA : 0;
+          fieldB = opensB > 0 ? parseInt(b.linkclicks || '0') / opensB : 0;
         } else if (sort.field === 'bounce_rate') {
           const totalBouncesA = parseInt(a.hardbounces || '0') + parseInt(a.softbounces || '0');
           const totalBouncesB = parseInt(b.hardbounces || '0') + parseInt(b.softbounces || '0');
-          fieldA = parseInt(a.send_amt || '0') > 0 ? totalBouncesA / parseInt(a.send_amt || '1') : 0;
-          fieldB = parseInt(b.send_amt || '0') > 0 ? totalBouncesB / parseInt(b.send_amt || '1') : 0;
+          const sendAmtA = parseInt(a.send_amt || '1');
+          const sendAmtB = parseInt(b.send_amt || '1');
+          
+          fieldA = sendAmtA > 0 ? totalBouncesA / sendAmtA : 0;
+          fieldB = sendAmtB > 0 ? totalBouncesB / sendAmtB : 0;
         } else if (sort.field === 'unsubscribe_rate') {
-          fieldA = parseInt(a.send_amt || '0') > 0 ? parseInt(a.unsubscribes || '0') / parseInt(a.send_amt || '1') : 0;
-          fieldB = parseInt(b.send_amt || '0') > 0 ? parseInt(b.unsubscribes || '0') / parseInt(b.send_amt || '1') : 0;
+          const sendAmtA = parseInt(a.send_amt || '1');
+          const sendAmtB = parseInt(b.send_amt || '1');
+          
+          fieldA = sendAmtA > 0 ? parseInt(a.unsubscribes || '0') / sendAmtA : 0;
+          fieldB = sendAmtB > 0 ? parseInt(b.unsubscribes || '0') / sendAmtB : 0;
         } else if (sort.field === 'bounces') {
           fieldA = parseInt(a.hardbounces || '0') + parseInt(a.softbounces || '0');
           fieldB = parseInt(b.hardbounces || '0') + parseInt(b.softbounces || '0');
         }
         
-        // Lidar com datas (datas vazias devem ser classificadas por último)
-        if (sort.field === 'cdate' || sort.field === 'sdate' || sort.field === 'ldate') {
+        // Lidar com datas
+        if (sort.field === 'cdate' || sort.field === 'sdate' || sort.field === 'ldate' || 
+            sort.field === 'mdate' || sort.field.includes('timestamp')) {
           if (!fieldA) return sort.direction === 'asc' ? 1 : -1;
           if (!fieldB) return sort.direction === 'asc' ? -1 : 1;
+          
           fieldA = new Date(fieldA as string).getTime();
           fieldB = new Date(fieldB as string).getTime();
         }

@@ -10,13 +10,6 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { 
   Accordion,
   AccordionContent,
   AccordionItem,
@@ -73,6 +66,36 @@ export function SortDialog({ sort, setSort }: SortDialogProps) {
     return option ? option.label : key;
   };
   
+  // Helper to get appropriate sort direction labels based on field type
+  const getSortDirectionLabels = (fieldKey: string): { asc: string; desc: string } => {
+    const option = SORT_OPTIONS.find(opt => opt.key === fieldKey);
+    
+    // Default for text fields
+    let ascLabel = 'A-Z';
+    let descLabel = 'Z-A';
+    
+    // Adjust based on category
+    if (option) {
+      if (option.category === 'time') {
+        ascLabel = 'Mais antigo';
+        descLabel = 'Mais recente';
+      } else if (option.category === 'performance' || 
+                option.category === 'engagement' || 
+                option.category === 'size' || 
+                option.category === 'calculated') {
+        ascLabel = 'Menor';
+        descLabel = 'Maior';
+      }
+    }
+    
+    return { asc: ascLabel, desc: descLabel };
+  };
+  
+  const getDirectionLabel = (field: string, direction: 'asc' | 'desc'): string => {
+    const labels = getSortDirectionLabels(field);
+    return direction === 'asc' ? ` (${labels.asc})` : ` (${labels.desc})`;
+  };
+  
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -96,7 +119,7 @@ export function SortDialog({ sort, setSort }: SortDialogProps) {
               <div className="flex items-center gap-2">
                 <Badge variant="secondary" className="flex items-center">
                   {getOptionLabel(currentSort.field)}
-                  {currentSort.direction === 'asc' ? ' (A-Z)' : ' (Z-A)'}
+                  {getDirectionLabel(currentSort.field, currentSort.direction)}
                 </Badge>
                 <Button variant="outline" size="sm" onClick={handleClear}>
                   Limpar
@@ -115,39 +138,42 @@ export function SortDialog({ sort, setSort }: SortDialogProps) {
                   </AccordionTrigger>
                   <AccordionContent>
                     <div className="grid gap-2 p-2">
-                      {options.map(option => (
-                        <div key={option.key} className="flex items-center justify-between">
-                          <Button
-                            variant={currentSort?.field === option.key ? "default" : "outline"}
-                            className="justify-start h-auto py-1 px-2 w-[70%] text-left"
-                            onClick={() => setCurrentSort({
-                              field: option.key,
-                              direction: currentSort?.direction || 'desc'
-                            })}
-                          >
-                            {option.label}
-                          </Button>
-                          
-                          {currentSort?.field === option.key && (
-                            <RadioGroup
-                              value={currentSort.direction}
-                              onValueChange={(val: 'asc' | 'desc') => 
-                                setCurrentSort({ ...currentSort, direction: val })
-                              }
-                              className="flex gap-2"
+                      {options.map(option => {
+                        const directionLabels = getSortDirectionLabels(option.key);
+                        return (
+                          <div key={option.key} className="flex items-center justify-between">
+                            <Button
+                              variant={currentSort?.field === option.key ? "default" : "outline"}
+                              className="justify-start h-auto py-1 px-2 w-[70%] text-left"
+                              onClick={() => setCurrentSort({
+                                field: option.key,
+                                direction: currentSort?.direction || 'desc'
+                              })}
                             >
-                              <div className="flex items-center space-x-1">
-                                <RadioGroupItem value="asc" id={`asc-${option.key}`} />
-                                <Label htmlFor={`asc-${option.key}`}>A-Z</Label>
-                              </div>
-                              <div className="flex items-center space-x-1">
-                                <RadioGroupItem value="desc" id={`desc-${option.key}`} />
-                                <Label htmlFor={`desc-${option.key}`}>Z-A</Label>
-                              </div>
-                            </RadioGroup>
-                          )}
-                        </div>
-                      ))}
+                              {option.label}
+                            </Button>
+                            
+                            {currentSort?.field === option.key && (
+                              <RadioGroup
+                                value={currentSort.direction}
+                                onValueChange={(val: 'asc' | 'desc') => 
+                                  setCurrentSort({ ...currentSort, direction: val })
+                                }
+                                className="flex gap-2"
+                              >
+                                <div className="flex items-center space-x-1">
+                                  <RadioGroupItem value="asc" id={`asc-${option.key}`} />
+                                  <Label htmlFor={`asc-${option.key}`}>{directionLabels.asc}</Label>
+                                </div>
+                                <div className="flex items-center space-x-1">
+                                  <RadioGroupItem value="desc" id={`desc-${option.key}`} />
+                                  <Label htmlFor={`desc-${option.key}`}>{directionLabels.desc}</Label>
+                                </div>
+                              </RadioGroup>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   </AccordionContent>
                 </AccordionItem>
