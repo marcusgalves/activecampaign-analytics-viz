@@ -49,13 +49,24 @@ export function CampaignsTable({
     }
   };
   
-  const viewCampaign = (campaignId: string) => {
+  const viewCampaign = (campaignId: number) => {
     navigate(`/dashboard/${campaignId}`);
   };
   
-  const openExternalReport = (campaignId: string, e: React.MouseEvent) => {
+  const openExternalReport = (campaignId: number, e: React.MouseEvent) => {
     e.stopPropagation();
     window.open(`https://hulisses.activehosted.com/report/#/campaign/${campaignId}/overview`, '_blank');
+  };
+  
+  const getStatusText = (status: number) => {
+    switch (status) {
+      case 0: return 'Rascunho';
+      case 1: return 'Agendado';
+      case 2: return 'Enviando';
+      case 3: return 'Enviado';
+      case 5: return 'Concluído';
+      default: return 'Desconhecido';
+    }
   };
   
   if (isLoading) {
@@ -90,6 +101,7 @@ export function CampaignsTable({
               <TableHead>Tipo</TableHead>
               <TableHead className="hidden md:table-cell">Data de criação</TableHead>
               <TableHead className="hidden md:table-cell">Data de envio</TableHead>
+              <TableHead className="hidden md:table-cell">Status</TableHead>
               <TableHead className="text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
@@ -110,6 +122,9 @@ export function CampaignsTable({
                 </TableCell>
                 <TableCell className="hidden md:table-cell">
                   {formatDate(campaign.sdate)}
+                </TableCell>
+                <TableCell className="hidden md:table-cell">
+                  {getStatusText(campaign.status)}
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
@@ -150,7 +165,9 @@ export function CampaignsTable({
                     if (currentPage > 1) onPageChange(currentPage - 1);
                   }}
                   className={currentPage <= 1 ? "pointer-events-none opacity-50" : ""}
-                />
+                >
+                  Anterior
+                </PaginationPrevious>
               </PaginationItem>
               
               {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
@@ -176,7 +193,9 @@ export function CampaignsTable({
                     if (currentPage < totalPages) onPageChange(currentPage + 1);
                   }}
                   className={currentPage >= totalPages ? "pointer-events-none opacity-50" : ""}
-                />
+                >
+                  Próximo
+                </PaginationNext>
               </PaginationItem>
             </PaginationContent>
           </Pagination>

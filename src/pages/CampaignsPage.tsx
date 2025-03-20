@@ -11,8 +11,7 @@ import { SortDialog } from "@/components/SortDialog";
 import { CampaignItem } from '@/types/campaign';
 import { FilterValue } from '@/types/filters';
 import { RefreshCw, Search } from 'lucide-react';
-
-const ITEMS_PER_PAGE = 10;
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const CampaignsPage: React.FC = () => {
   const [campaigns, setCampaigns] = useState<CampaignItem[]>([]);
@@ -23,6 +22,7 @@ const CampaignsPage: React.FC = () => {
   const [sort, setSort] = useState<{ field: string; direction: 'asc' | 'desc' } | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [viewMode, setViewMode] = useState('all');
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   
   // Fetch all campaigns on initial load
   useEffect(() => {
@@ -46,40 +46,8 @@ const CampaignsPage: React.FC = () => {
       
       const data = await response.json();
       
-      // Transform API response to match our CampaignItem interface
-      const campaignItems: CampaignItem[] = data.map((item: any) => ({
-        id: item.id,
-        name: item.name,
-        type: item.type,
-        cdate: item.cdate,
-        sdate: item.sdate,
-        ldate: item.ldate,
-        screenshot: item.screenshot,
-        status: item.status,
-        send_amt: item.send_amt,
-        total_amt: item.total_amt,
-        opens: item.opens,
-        uniqueopens: item.uniqueopens,
-        linkclicks: item.linkclicks,
-        uniquelinkclicks: item.uniquelinkclicks,
-        hardbounces: item.hardbounces,
-        softbounces: item.softbounces,
-        unsubscribes: item.unsubscribes,
-        forwards: item.forwards,
-        uniqueforwards: item.uniqueforwards,
-        replies: item.replies,
-        uniquereplies: item.uniquereplies,
-        socialshares: item.socialshares,
-        trackreads: item.trackreads,
-        tracklinks: item.tracklinks,
-        public: item.public,
-        schedule: item.schedule,
-        segmentid: item.segmentid,
-        formid: item.formid,
-        source: item.source,
-      }));
-      
-      setCampaigns(campaignItems);
+      // Transformar a resposta da API para corresponder à nossa interface CampaignItem
+      setCampaigns(data);
       
       toast({
         description: "Lista de campanhas atualizada com sucesso.",
@@ -100,27 +68,27 @@ const CampaignsPage: React.FC = () => {
     setCurrentPage(1);
     let result = [...campaigns];
     
-    // Apply view mode filtering
+    // Aplicar filtragem por modo de visualização
     if (viewMode === 'sent') {
       result = result.filter(campaign => 
-        campaign.sdate && parseInt(campaign.send_amt) > 0
+        campaign.sdate !== null && campaign.sdate
       );
     } else if (viewMode === 'draft') {
       result = result.filter(campaign => 
-        !campaign.sdate || parseInt(campaign.send_amt) === 0
+        !campaign.sdate
       );
     }
     
-    // Apply search query
+    // Aplicar consulta de pesquisa
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       result = result.filter(campaign => 
         campaign.name.toLowerCase().includes(query) ||
-        campaign.id.toLowerCase().includes(query)
+        campaign.id.toString().includes(query)
       );
     }
     
-    // Apply other filters
+    // Aplicar outros filtros
     if (filters.length > 0) {
       result = result.filter(campaign => {
         return filters.every(filter => {
@@ -157,33 +125,33 @@ const CampaignsPage: React.FC = () => {
       });
     }
     
-    // Apply sorting
+    // Aplicar ordenação
     if (sort) {
       result.sort((a, b) => {
         let fieldA = a[sort.field as keyof CampaignItem];
         let fieldB = b[sort.field as keyof CampaignItem];
         
-        // Handle calculated fields
+        // Lidar com campos calculados
         if (sort.field === 'open_rate') {
-          fieldA = parseInt(a.send_amt) > 0 ? parseInt(a.opens) / parseInt(a.send_amt) : 0;
-          fieldB = parseInt(b.send_amt) > 0 ? parseInt(b.opens) / parseInt(b.send_amt) : 0;
+          fieldA = parseInt(a.opens || '0') > 0 ? parseInt(a.uniqueopens || '0') / parseInt(a.send_amt || '1') : 0;
+          fieldB = parseInt(b.opens || '0') > 0 ? parseInt(b.uniqueopens || '0') / parseInt(b.send_amt || '1') : 0;
         } else if (sort.field === 'click_rate') {
-          fieldA = parseInt(a.opens) > 0 ? parseInt(a.linkclicks) / parseInt(a.opens) : 0;
-          fieldB = parseInt(b.opens) > 0 ? parseInt(b.linkclicks) / parseInt(b.opens) : 0;
+          fieldA = parseInt(a.opens || '0') > 0 ? parseInt(a.linkclicks || '0') / parseInt(a.opens || '1') : 0;
+          fieldB = parseInt(b.opens || '0') > 0 ? parseInt(b.linkclicks || '0') / parseInt(b.opens || '1') : 0;
         } else if (sort.field === 'bounce_rate') {
-          const totalBouncesA = parseInt(a.hardbounces) + parseInt(a.softbounces);
-          const totalBouncesB = parseInt(b.hardbounces) + parseInt(b.softbounces);
-          fieldA = parseInt(a.send_amt) > 0 ? totalBouncesA / parseInt(a.send_amt) : 0;
-          fieldB = parseInt(b.send_amt) > 0 ? totalBouncesB / parseInt(b.send_amt) : 0;
+          const totalBouncesA = parseInt(a.hardbounces || '0') + parseInt(a.softbounces || '0');
+          const totalBouncesB = parseInt(b.hardbounces || '0') + parseInt(b.softbounces || '0');
+          fieldA = parseInt(a.send_amt || '0') > 0 ? totalBouncesA / parseInt(a.send_amt || '1') : 0;
+          fieldB = parseInt(b.send_amt || '0') > 0 ? totalBouncesB / parseInt(b.send_amt || '1') : 0;
         } else if (sort.field === 'unsubscribe_rate') {
-          fieldA = parseInt(a.send_amt) > 0 ? parseInt(a.unsubscribes) / parseInt(a.send_amt) : 0;
-          fieldB = parseInt(b.send_amt) > 0 ? parseInt(b.unsubscribes) / parseInt(b.send_amt) : 0;
+          fieldA = parseInt(a.send_amt || '0') > 0 ? parseInt(a.unsubscribes || '0') / parseInt(a.send_amt || '1') : 0;
+          fieldB = parseInt(b.send_amt || '0') > 0 ? parseInt(b.unsubscribes || '0') / parseInt(b.send_amt || '1') : 0;
         } else if (sort.field === 'bounces') {
-          fieldA = parseInt(a.hardbounces) + parseInt(a.softbounces);
-          fieldB = parseInt(b.hardbounces) + parseInt(b.softbounces);
+          fieldA = parseInt(a.hardbounces || '0') + parseInt(a.softbounces || '0');
+          fieldB = parseInt(b.hardbounces || '0') + parseInt(b.softbounces || '0');
         }
         
-        // Handle dates (empty dates should be sorted last)
+        // Lidar com datas (datas vazias devem ser classificadas por último)
         if (sort.field === 'cdate' || sort.field === 'sdate' || sort.field === 'ldate') {
           if (!fieldA) return sort.direction === 'asc' ? 1 : -1;
           if (!fieldB) return sort.direction === 'asc' ? -1 : 1;
@@ -191,7 +159,7 @@ const CampaignsPage: React.FC = () => {
           fieldB = new Date(fieldB as string).getTime();
         }
         
-        // Handle numeric fields
+        // Lidar com campos numéricos
         if (typeof fieldA === 'string' && !isNaN(Number(fieldA))) {
           fieldA = Number(fieldA);
         }
@@ -199,7 +167,7 @@ const CampaignsPage: React.FC = () => {
           fieldB = Number(fieldB);
         }
         
-        // Determine sort order
+        // Determinar ordem de classificação
         if (fieldA < fieldB) {
           return sort.direction === 'asc' ? -1 : 1;
         }
@@ -214,11 +182,16 @@ const CampaignsPage: React.FC = () => {
   };
   
   const paginatedCampaigns = filteredCampaigns.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
   );
   
-  const totalPages = Math.max(1, Math.ceil(filteredCampaigns.length / ITEMS_PER_PAGE));
+  const totalPages = Math.max(1, Math.ceil(filteredCampaigns.length / itemsPerPage));
+  
+  const handleItemsPerPageChange = (value: string) => {
+    setItemsPerPage(parseInt(value));
+    setCurrentPage(1); // Resetar para a primeira página ao mudar a quantidade de itens
+  };
   
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-gray-50">
@@ -277,6 +250,25 @@ const CampaignsPage: React.FC = () => {
               <TabsTrigger value="draft">Rascunhos</TabsTrigger>
             </TabsList>
             <TabsContent value="all" className="mt-4">
+              <div className="flex justify-end mb-4">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-500">Itens por página:</span>
+                  <Select
+                    value={itemsPerPage.toString()}
+                    onValueChange={handleItemsPerPageChange}
+                  >
+                    <SelectTrigger className="w-[80px]">
+                      <SelectValue placeholder="10" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="10">10</SelectItem>
+                      <SelectItem value="25">25</SelectItem>
+                      <SelectItem value="50">50</SelectItem>
+                      <SelectItem value="100">100</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
               <CampaignsTable 
                 campaigns={paginatedCampaigns}
                 currentPage={currentPage}
@@ -286,6 +278,25 @@ const CampaignsPage: React.FC = () => {
               />
             </TabsContent>
             <TabsContent value="sent" className="mt-4">
+              <div className="flex justify-end mb-4">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-500">Itens por página:</span>
+                  <Select
+                    value={itemsPerPage.toString()}
+                    onValueChange={handleItemsPerPageChange}
+                  >
+                    <SelectTrigger className="w-[80px]">
+                      <SelectValue placeholder="10" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="10">10</SelectItem>
+                      <SelectItem value="25">25</SelectItem>
+                      <SelectItem value="50">50</SelectItem>
+                      <SelectItem value="100">100</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
               <CampaignsTable 
                 campaigns={paginatedCampaigns}
                 currentPage={currentPage}
@@ -295,6 +306,25 @@ const CampaignsPage: React.FC = () => {
               />
             </TabsContent>
             <TabsContent value="draft" className="mt-4">
+              <div className="flex justify-end mb-4">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-500">Itens por página:</span>
+                  <Select
+                    value={itemsPerPage.toString()}
+                    onValueChange={handleItemsPerPageChange}
+                  >
+                    <SelectTrigger className="w-[80px]">
+                      <SelectValue placeholder="10" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="10">10</SelectItem>
+                      <SelectItem value="25">25</SelectItem>
+                      <SelectItem value="50">50</SelectItem>
+                      <SelectItem value="100">100</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
               <CampaignsTable 
                 campaigns={paginatedCampaigns}
                 currentPage={currentPage}

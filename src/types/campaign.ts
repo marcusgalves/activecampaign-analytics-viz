@@ -38,35 +38,43 @@ export interface Campaign {
 }
 
 export interface CampaignItem {
-  type: string;
+  id: number;
   name: string;
+  type: string;
+  source: string;
   cdate: string;
+  mdate: string | null;
   sdate: string | null;
   ldate: string | null;
+  created_timestamp: string;
+  updated_timestamp: string;
+  status: number;
+  public: boolean;
+  formid: number;
+  segmentid: number;
+  has_automation: boolean | null;
+  tags: string | null;
+  last_synced: string;
+  active: boolean;
   screenshot?: string;
-  id: string;
-  status: string;
-  send_amt: string;
-  total_amt: string;
-  opens: string;
-  uniqueopens: string;
-  linkclicks: string;
-  uniquelinkclicks: string;
-  hardbounces: string;
-  softbounces: string;
-  unsubscribes: string;
-  forwards: string;
-  uniqueforwards: string;
-  replies: string;
-  uniquereplies: string;
-  socialshares: string;
-  trackreads: string;
-  tracklinks: string;
-  public: string;
-  schedule: string;
-  segmentid: string;
-  formid: string;
-  source: string;
+  // Campos adicionais para compatibilidade com o código existente
+  send_amt?: string;
+  total_amt?: string;
+  opens?: string;
+  uniqueopens?: string;
+  linkclicks?: string;
+  uniquelinkclicks?: string;
+  hardbounces?: string;
+  softbounces?: string;
+  unsubscribes?: string;
+  forwards?: string;
+  uniqueforwards?: string;
+  replies?: string;
+  uniquereplies?: string;
+  socialshares?: string;
+  trackreads?: string;
+  tracklinks?: string;
+  schedule?: string;
   [key: string]: any;
 }
 
