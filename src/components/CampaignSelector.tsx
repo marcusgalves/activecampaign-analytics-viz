@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { RefreshCw, Search, Check } from 'lucide-react';
+import { RefreshCw, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CampaignItem } from '@/types/campaign';
 import {
@@ -20,8 +20,8 @@ import {
 
 interface CampaignSelectorProps {
   campaigns: CampaignItem[];
-  selectedCampaignId: string | null;
-  onSelectCampaign: (campaignId: string) => void;
+  selectedCampaignId: number | null;
+  onSelectCampaign: (campaignId: number) => void;
   onRefreshCampaigns: () => void;
   isLoading: boolean;
 }

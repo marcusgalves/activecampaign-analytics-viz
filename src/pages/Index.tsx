@@ -13,7 +13,7 @@ const Dashboard: React.FC = () => {
   const [isLoadingCampaigns, setIsLoadingCampaigns] = useState(false);
   const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [campaigns, setCampaigns] = useState<CampaignItem[]>([]);
-  const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null);
+  const [selectedCampaignId, setSelectedCampaignId] = useState<number | null>(null);
 
   // Fetch all campaigns on initial load
   useEffect(() => {
@@ -44,11 +44,21 @@ const Dashboard: React.FC = () => {
         id: item.id,
         name: item.name,
         type: item.type,
+        source: item.source,
         cdate: item.cdate,
+        mdate: item.mdate,
         sdate: item.sdate,
         ldate: item.ldate,
-        screenshot: item.screenshot,
-        status: item.status
+        created_timestamp: item.created_timestamp,
+        updated_timestamp: item.updated_timestamp,
+        status: item.status,
+        public: item.public,
+        formid: item.formid,
+        segmentid: item.segmentid,
+        has_automation: item.has_automation,
+        tags: item.tags,
+        last_synced: item.last_synced,
+        active: item.active
       }));
       
       setCampaigns(campaignItems);
@@ -73,7 +83,7 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  const fetchCampaignMetrics = async (campaignId: string) => {
+  const fetchCampaignMetrics = async (campaignId: number) => {
     setIsLoading(true);
     
     try {
@@ -97,7 +107,7 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  const handleSelectCampaign = (campaignId: string) => {
+  const handleSelectCampaign = (campaignId: number) => {
     setSelectedCampaignId(campaignId);
   };
 
