@@ -17,7 +17,8 @@ import {
   PaginationItem, 
   PaginationLink, 
   PaginationNext, 
-  PaginationPrevious 
+  PaginationPrevious,
+  PaginationEllipsis
 } from "@/components/ui/pagination";
 import { CampaignItem } from '@/types/campaign';
 import { Button } from '@/components/ui/button';
@@ -67,6 +68,94 @@ export function CampaignsTable({
       case 5: return 'Concluído';
       default: return 'Desconhecido';
     }
+  };
+  
+  // Renderiza os números de página com elipses quando necessário
+  const renderPaginationItems = () => {
+    // Só mostraremos no máximo 7 itens na paginação (incluindo elipses)
+    const maxVisiblePages = 3;
+    const items = [];
+
+    // Sempre mostra a primeira página
+    items.push(
+      <PaginationItem key={1}>
+        <PaginationLink 
+          href="#" 
+          isActive={currentPage === 1}
+          onClick={(e) => {
+            e.preventDefault();
+            onPageChange(1);
+          }}
+        >
+          1
+        </PaginationLink>
+      </PaginationItem>
+    );
+
+    // Calcula o intervalo de páginas a mostrar ao redor da página atual
+    let startPage = Math.max(2, currentPage - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(totalPages - 1, startPage + maxVisiblePages - 1);
+    
+    // Ajusta o startPage se estamos próximos do final
+    if (endPage === totalPages - 1) {
+      startPage = Math.max(2, endPage - maxVisiblePages + 1);
+    }
+
+    // Adiciona elipse no início se necessário
+    if (startPage > 2) {
+      items.push(
+        <PaginationItem key="ellipsis-start">
+          <PaginationEllipsis />
+        </PaginationItem>
+      );
+    }
+
+    // Adiciona as páginas do meio
+    for (let i = startPage; i <= endPage; i++) {
+      items.push(
+        <PaginationItem key={i}>
+          <PaginationLink 
+            href="#" 
+            isActive={currentPage === i}
+            onClick={(e) => {
+              e.preventDefault();
+              onPageChange(i);
+            }}
+          >
+            {i}
+          </PaginationLink>
+        </PaginationItem>
+      );
+    }
+
+    // Adiciona elipse no final se necessário
+    if (endPage < totalPages - 1) {
+      items.push(
+        <PaginationItem key="ellipsis-end">
+          <PaginationEllipsis />
+        </PaginationItem>
+      );
+    }
+
+    // Sempre mostra a última página se totalPages > 1
+    if (totalPages > 1) {
+      items.push(
+        <PaginationItem key={totalPages}>
+          <PaginationLink 
+            href="#" 
+            isActive={currentPage === totalPages}
+            onClick={(e) => {
+              e.preventDefault();
+              onPageChange(totalPages);
+            }}
+          >
+            {totalPages}
+          </PaginationLink>
+        </PaginationItem>
+      );
+    }
+
+    return items;
   };
   
   if (isLoading) {
@@ -165,25 +254,10 @@ export function CampaignsTable({
                     if (currentPage > 1) onPageChange(currentPage - 1);
                   }}
                   className={currentPage <= 1 ? "pointer-events-none opacity-50" : ""}
-                >
-                  Anterior
-                </PaginationPrevious>
+                />
               </PaginationItem>
               
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                <PaginationItem key={page}>
-                  <PaginationLink 
-                    href="#" 
-                    isActive={currentPage === page}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      onPageChange(page);
-                    }}
-                  >
-                    {page}
-                  </PaginationLink>
-                </PaginationItem>
-              ))}
+              {renderPaginationItems()}
               
               <PaginationItem>
                 <PaginationNext 
@@ -193,9 +267,7 @@ export function CampaignsTable({
                     if (currentPage < totalPages) onPageChange(currentPage + 1);
                   }}
                   className={currentPage >= totalPages ? "pointer-events-none opacity-50" : ""}
-                >
-                  Próximo
-                </PaginationNext>
+                />
               </PaginationItem>
             </PaginationContent>
           </Pagination>
