@@ -1,6 +1,4 @@
-
 version: '3.8'
-
 services:
   app:
     build:
@@ -11,9 +9,19 @@ services:
     restart: unless-stopped
     environment:
       - NODE_ENV=production
+      - DOMAIN=${DOMAIN:-dash.marcusgalves.com}  # Valor padrão caso a variável não seja definida
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3838"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 10s
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.active-campaign-dashboard.rule=Host(`${DOMAIN:-dash.marcusgalves.com}`)
+      - traefik.http.routers.active-campaign-dashboard.entrypoints=websecure
+      - traefik.http.routers.active-campaign-dashboard.tls.certresolver=letsencryptresolver
+      - traefik.http.routers.active-campaign-dashboard.priority=1
+      - traefik.http.routers.active-campaign-dashboard.service=active-campaign-dashboard
+      - traefik.http.services.active-campaign-dashboard.loadbalancer.server.port=3838
+      - traefik.http.services.active-campaign-dashboard.loadbalancer.passHostHeader=true
